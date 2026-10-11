@@ -48,8 +48,8 @@ def poll_session(session_id: str, interval: int = 8, timeout: int = 600):
                 last_msg = assistant_messages[-1]
                 content = last_msg.get("content", "")
                 
-                # 检查是否包含结果 URL
-                if "http" in content or "完成" in content or "生成" in content:
+                # 自然语言中的“正在生成/完成后通知”不是完成信号。
+                if is_complete(last_msg):
                     print(f"\n✓ 第 {check_count} 次检查 (用时 {elapsed}s): 任务完成!")
                     print("-" * 60)
                     print(f"结果: {content[:500]}")
@@ -73,6 +73,13 @@ def poll_session(session_id: str, interval: int = 8, timeout: int = 600):
     except KeyboardInterrupt:
         print("\n[!] 用户中断")
         return None
+
+
+def is_complete(message):
+    """Legacy API: require explicit success plus an actual result attachment."""
+    return message.get("status") in ("completed", "succeeded", "success") and bool(
+        message.get("attachments") or message.get("artifacts") or message.get("results")
+    )
 
 
 def main():

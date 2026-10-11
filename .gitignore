@@ -1,4 +1,8 @@
 # Python
+.tools/
+data/
+.libtv/
+*.log
 __pycache__/
 *.py[cod]
 *.bak
@@ -25,3 +29,10 @@ _meta.json
 # OS
 Thumbs.db
 .AppleDouble
+
+.venv/
+.env
+.env.*
+*.pem
+*.key
+credentials*.json

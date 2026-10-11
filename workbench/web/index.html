@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LibTV 批量创作台</title><link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script></head><body>
+<header><div class="brand"><span class="mark">L</span><strong>LibTV 创作台</strong><span class="tag">本地工作台</span></div><span id="connection" role="status">正在连接…</span></header>
+<main><div class="intro"><div><p class="eyebrow">从想法，到一组可用素材</p><h1>写好需求，剩下的交给队列。</h1><p>图片与视频批量生成，自动保存到本机，随时查看进度。</p></div><a href="https://github.com/Qiuxiangxiang/libtv-skill-pro" target="_blank" rel="noreferrer">原项目 ↗</a></div>
+<div id="notice" role="alert" hidden></div><div class="layout"><section class="composer"><h2>新建一批素材</h2><form id="form">
+<label for="project">保存到 LibTV 项目</label><select id="project" required></select>
+<div class="row"><div><label for="kind">素材类型</label><select id="kind"><option value="image">图片</option><option value="video">视频</option></select></div><div class="grow"><label for="model">生成模型</label><select id="model" required></select></div></div>
+<p id="model-note" class="muted"></p><div id="settings" class="settings"></div>
+<label for="prompts">创作需求 <span class="muted">每行一个任务</span></label><textarea id="prompts" rows="7" required placeholder="古风游戏道具，一盏黄铜手提灯，白色背景&#10;同一系列，一柄雕花长剑，白色背景"></textarea>
+<div class="presets"><button type="button" data-prompt="游戏角色概念设计，全身站立姿势，服装细节清晰，纯色背景">角色</button><button type="button" data-prompt="游戏场景概念图，远中近景层次清晰，电影光影，宽幅构图">场景</button><button type="button" data-prompt="游戏道具概念图，单个道具，居中构图，白色背景，无文字">道具</button></div>
+<details><summary>高级参数</summary><label for="advanced">额外模型参数（JSON）</label><textarea id="advanced" rows="3">{}</textarea><p class="muted">例如模型支持的 duration、seed。具体支持项以模型说明为准。</p><pre id="schema"></pre></details>
+<p class="muted">点击后按顺序开始生成，使用当前 LibTV 账号的额度。每批最多 20 条，每条默认生成 1 份。</p><button id="submit" class="primary" type="submit">加入队列并开始生成</button></form></section>
+<section class="queue"><div class="section-head"><h2>生成队列 <span id="count">0</span></h2><button id="refresh" type="button">刷新</button></div><div id="paused" class="error" hidden>账号算力不足，队列已暂停。处理额度后，可继续尚未提交的任务。<button id="resume" type="button">额度已处理，继续排队任务</button></div><div class="stats"><span>等待 <b id="waiting">0</b></span><span>处理中 <b id="active">0</b></span><span>已完成 <b id="done">0</b></span></div><div id="jobs" aria-live="polite"></div></section></div></main><footer>文件保存在项目的 data / outputs 文件夹 · 关闭页面不会停止生成，关闭后台程序会暂停本地队列。</footer></body></html>

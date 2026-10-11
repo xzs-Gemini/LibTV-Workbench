@@ -1,129 +1,37 @@
-# libtv-skill-pro
+# LibTV 批量创作台
 
-> 🎬 LibTV (liblib.tv) AI 视频/图像生成平台的 Agent skill。通过 [ClawHub](https://clawhub.ai) 分发，可被 OpenClaw / Claude Code / Cursor 等 Agent 运行时加载。Pro 版在 [@haofanwang/libtv-skill](https://clawhub.ai/haofanwang/libtv-skill) 基础上扩展高级工作流与功能矩阵层。
+基于 [Qiuxiangxiang/libtv-skill-pro](https://github.com/Qiuxiangxiang/libtv-skill-pro) 的二次开发，保留原脚本；新增本地网页和持久化任务队列，实际生成使用 LibTV 官方 CLI 1.0.2。不是 LibTV 官方产品。
 
-[![ClawHub](https://img.shields.io/badge/ClawHub-libtv--skill--pro-orange)](https://clawhub.ai/qiuxiangxiang/libtv-skill-pro)
-[![GitHub stars](https://img.shields.io/github/stars/Qiuxiangxiang/libtv-skill-pro?style=social)](https://github.com/Qiuxiangxiang/libtv-skill-pro)
-[![GitHub issues](https://img.shields.io/github/issues/Qiuxiangxiang/libtv-skill-pro)](https://github.com/Qiuxiangxiang/libtv-skill-pro/issues)
-[![License](https://img.shields.io/badge/license-MIT--0-blue)](LICENSE)
+## 启动与使用
 
-## 是什么
+本仓库发布的是 Windows 本地单用户源码原型，不包含 Python、官方 CLI、登录凭据和生成记录。首次安装请阅读 [INSTALL.md](INSTALL.md)。原版脚本说明保存在 [UPSTREAM_README.md](UPSTREAM_README.md)，其中的安装命令安装的是上游版本。
 
-让 Agent 运行时（OpenClaw / Claude Code / Cursor / 任何能加载 SKILL.md 或 plugin.json 的客户端）通过统一入口调用 LibTV 平台的 AI 创作能力：
+在此目录用 PowerShell 运行 `./Start-Workbench.ps1`，打开 `http://127.0.0.1:5212`。后台已启动时直接打开页面即可，不必再次启动。
 
-- **生成**：文生图/视频、图生图/视频、首尾帧视频、音频驱动视频
-- **编辑**：局部修改（"把纸船换成爱心"）、风格迁移、运镜调整
-- **多模型路由**：Seedance 2.0 / Kling 3.0/O3 / Wan 2.6 / Nano Banana / Midjourney / Seedream 5.0 / Lib Nano Pro / GVLM 3.1
-- **工作流**：批量并发、轮询监控、8 个预设模板（短剧/MV/角色设计/分镜...）、HTML 报告导出
-- **dry-run 预览**：所有生成类命令支持 `--dry-run`，预览 prompt 不烧积分
-- **结构化错误**：API 错误以 JSON 输出，Agent 程序化可处理
+1. 选择 LibTV 项目、图片或视频、模型与参数。
+2. 每行输入一条需求，点击“加入队列并开始生成”。每批最多20条，顺序执行。
+3. 完成后点击图片或下载链接。文件和任务参数保存在 `data/outputs/<任务ID>/`。
+4. 排队任务可取消。网络异常、重启后的未决任务点击“核对云端状态”，只查询/下载，不重复扣额度生成。
 
-## 安装
+登录使用 `.tools/libtv-1.0.2/libtv-win-x64/libtv.exe login web --open`。凭据由官方 CLI 保存在用户目录，工作台不读取密码，不保存密钥。账号算力不足会暂停本地队列；处理额度后点击继续，只恢复尚未提交的任务，失败任务需要重新填写提交。
 
-### 方式 1：ClawHub CLI（推荐）
+关闭页面不影响后台。关闭后台后，未提交任务在下次启动时继续；已经提交的任务先核对。当前版本没有云端取消功能。
 
-```bash
-clawhub install libtv-skill-pro
-# 安装后可用 openclaw skills info libtv-skill-pro 查看 skill 详情
-```
+## 验证记录（2026-10-11）
 
-skill 安装到 `~/.openclaw/workspace/skills/libtv-skill-pro/`，OpenClaw 自动识别。
+- 已真实登录、列出项目与模型、创建独立测试项目。
+- 已真实生成并下载一张 Z-image Turbo 图片。
+- 页面提交两条图片任务，远端明确返回“算力不足”，已保留失败记录；没有充值或购买。
+- 下载链路使用上述真实成功节点验证，结果可在本地工作台查看。
+- 视频模型列表/参数可查询；视频生成尚未通过实测（当前账号额度不足）。
+- 单元测试覆盖任务完成、下载、重启恢复、超时不重发、取消和无效批次。
 
-### 方式 2：从 GitHub 克隆（开发者）
+## 开发
 
-```bash
-git clone https://github.com/Qiuxiangxiang/libtv-skill-pro.git ~/.agents/skills/libtv-skill-pro
-```
+`workbench/core.py`：CLI 适配与 SQLite 队列；`workbench/server.py`：仅本机 HTTP 服务；`workbench/web/`：中文界面。
 
-含完整开发文件：`tests/` / `CHANGELOG.md` / `INTEGRATIONS.md` / `cursor/` / `tools/` 等（ClawHub 分发版不包含这些）。
+运行测试：`python -m unittest discover -s tests -p test_workbench.py -v`。
 
-### 方式 3：Claude Code / Cursor 用户
+可用环境变量 `LIBTV_CLI` 指定官方 CLI 路径，`LIBTV_PROJECT` 指定默认项目。原始 Access Key 脚本仍在 `scripts/`，不用于新工作台。其旧会话轮询现在只接受明确成功状态与结果附件；文本中的“正在生成”不会再被误判完成。
 
-详见 [`INTEGRATIONS.md`](./INTEGRATIONS.md)：
-- **Claude Code**：通过本地 marketplace + plugin install 注册
-- **Cursor**：项目级 `.cursor/rules/` 或全局 User Rules
-
-## 快速开始
-
-```bash
-# 1. 拿 access key：https://www.liblib.tv → 用户中心 → API
-export LIBTV_ACCESS_KEY=your_key_here
-
-# 2. 看命令清单
-python3 scripts/libtv.py --help
-
-# 3. dry-run 预览（不烧积分）
-python3 scripts/libtv.py model with lib-nano-pro \
-  "白色短毛猫坐在窗台上" --ratio 1:1 --resolution 2K --dry-run
-
-# 4. 真实生成 + 轮询 + 下载
-python3 scripts/libtv.py model with lib-nano-pro "..." --ratio 1:1
-python3 scripts/libtv.py poll SESSION_ID
-python3 scripts/libtv.py download SESSION_ID --output-dir ~/Downloads/cat
-```
-
-完整示例见 [`examples/`](./examples/)（5 个递进难度的 case）。
-
-## 命令地图
-
-```
-libtv.py flow      预设流程（故事脚本/角色三视图/首帧图生视频/音频生视频）
-libtv.py node      节点能力（文本/图片/视频节点细分动作）
-libtv.py edit      修饰器（风格/标记/聚焦/运镜/角色库）
-libtv.py model     模型路由（list 已知模型 / with 指定模型生成）
-
-libtv.py session   创建会话/发消息       libtv.py query   查询会话进展
-libtv.py upload    上传图片/视频         libtv.py download 下载结果
-
-libtv.py batch     并发批量任务          libtv.py monitor 实时监控
-libtv.py poll      简化轮询              libtv.py template 预设工作流模板
-libtv.py export    导出 HTML/MD/JSON     libtv.py history 会话历史
-libtv.py project   项目管理
-```
-
-17 个独立脚本（`scripts/*.py`）仍可单独调用（向后兼容）。
-
-## 跟原版的关系
-
-| | @haofanwang/libtv-skill | @qiuxiangxiang/libtv-skill-pro |
-|---|---|---|
-| 基础脚本 | 6 个 | 6 个（保留原版） |
-| 高级工作流 | — | 7 个（batch/monitor/poll/template/export/history/project） |
-| LibTV 功能矩阵 | — | 4 个（flow/node/edit/model） |
-| 统一入口 | — | libtv.py |
-| dry-run 预览 | — | ✓ |
-| 结构化错误 | — | ✓ |
-
-如果你只需要"自然语言一句话路由"的极简体验，原版 6 脚本足够。Pro 版面向**批量、精细控制、Agent 程序化集成**场景。
-
-## 测试
-
-```bash
-# 离线（5 秒，不烧积分，120 个用例）
-bash tests/test_offline.sh && python3 tests/test_templates.py
-
-# 在线（按开关计费）
-ONLINE_SESSION=1 bash tests/test_online.sh    # ≈0 积分
-ONLINE_IMAGE=1   bash tests/test_online.sh    # ≈14 积分
-ONLINE_VIDEO=1   bash tests/test_online.sh    # ≈135 积分
-```
-
-详细测试矩阵见 [`tests/README.md`](./tests/README.md)。
-
-## 贡献
-
-发现 bug 或想加新功能：
-
-1. Issue 描述场景 + 预期 vs 实际
-2. PR 前请跑通 `bash tests/test_offline.sh && python3 tests/test_templates.py`
-3. 新功能请同时在 `tests/` 加用例 + 在 `examples/` 加 case
-
-## License
-
-MIT-0（与原版一致）。
-
-## 致谢
-
-- [@haofanwang/libtv-skill](https://clawhub.ai/haofanwang/libtv-skill) — 原版基础架构
-- [LibTV (liblib.tv)](https://www.liblib.tv) — AI 视频创作平台
-- [ClawHub](https://clawhub.ai) — Agent skill 分发
+后续可增加素材参考输入、分镜模板、配音、字幕与 FFmpeg 剪辑。当前版本提供批量素材生成与下载，不声称已实现全自动成片。
